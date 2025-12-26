@@ -3,7 +3,7 @@ order: 3
 title: ппп
 ---
 
-[comment:lXAic]drugaya-ni-o-chem[/comment]
+drugaya-ni-o-chem
 
 * [ ] dvfsdgvdfsh
 
