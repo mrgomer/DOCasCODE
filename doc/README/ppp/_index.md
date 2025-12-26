@@ -21,7 +21,7 @@ title: ппп
 
 [cis-111-c](./cis-111-cthdbc.pdf)[highlight:ice-blue][thdbc.pdf](./cis-111-cthdbc.pdf)[/highlight]
 
-![](./ppp.webp){width=730px height=301px}
+![](./_index.webp){width=730px height=301px}
 
 [comment:6C2eZ]
 
