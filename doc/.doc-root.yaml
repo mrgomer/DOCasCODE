@@ -11,3 +11,5 @@ properties:
     style: dark-orange
     icon: arrow-up
 style: pink-blue
+versions:
+  - DOC-*
