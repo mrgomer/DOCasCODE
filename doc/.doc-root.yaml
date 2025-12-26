@@ -1,0 +1,8 @@
+title: DOCasCODE
+optionalCategoryIndex: true
+supportedLanguages: []
+properties:
+  - name: атрибу 1
+    type: Flag
+    style: dark-orange
+    icon: alarm-clock
