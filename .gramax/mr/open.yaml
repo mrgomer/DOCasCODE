@@ -1,0 +1,10 @@
+creator: mrgomer <mr.gomer@gmail.com>
+targetBranch: main
+createdAt: '2025-12-26 17:41:34'
+approvers:
+- user: G0MER <mr.gomer@gmail.com>
+  approvedAt: '2025-12-26 17:41:57'
+options:
+  deleteAfterMerge: false
+  squash: false
+description: ????
