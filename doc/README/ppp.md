@@ -3,7 +3,7 @@ order: 3
 title: ппп
 ---
 
-[drugaya-ni-o-chem](https://app.gram.ax/github.com/mrgomer/DOCasCODE/main/-/README/drugaya-ni-o-chem)
+[comment:lXAic]drugaya-ni-o-chem[/comment]
 
 * [ ] dvfsdgvdfsh
 
@@ -19,6 +19,13 @@ title: ппп
 
 [/html]
 
-[cis-111-cthdbc.pdf](./cis-111-cthdbc.pdf)
+[cis-111-c](./cis-111-cthdbc.pdf)[highlight:ice-blue][thdbc.pdf](./cis-111-cthdbc.pdf)[/highlight]
 
 ![](./ppp.webp){width=730px height=301px}
+
+[comment:6C2eZ]
+
+[snippet:3ps4c]
+
+[/comment]
+
