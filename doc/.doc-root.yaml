@@ -6,4 +6,8 @@ properties:
     type: Flag
     style: dark-orange
     icon: alarm-clock
+  - name: тр2
+    type: Date
+    style: dark-orange
+    icon: arrow-up
 style: pink-blue

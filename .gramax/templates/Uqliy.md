@@ -22,7 +22,15 @@ title: Новый Сервис <CIS-???>
 
 [tab:Sequence]
 
+пролболопбло
 
+[/tab]
+
+[tab:Вкладка]
+
+адтгтже ьж
+
+рэдлэж
 
 [/tab]
 
@@ -30,7 +38,14 @@ title: Новый Сервис <CIS-???>
 
 [comment:JnuRv]
 
-[view::::атрибу 1:Table]
+[view::::атрибу 1,тр2:Table]
 
 [/comment]
 
+:::danger 
+
+тирл прт
+
+
+
+:::
