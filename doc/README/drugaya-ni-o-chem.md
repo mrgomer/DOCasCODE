@@ -10,7 +10,7 @@ properties:
 
 #### dscgadf gsdfg
 
-:::danger 
+:::quote 
 
 Алярма! Упячка!
 
