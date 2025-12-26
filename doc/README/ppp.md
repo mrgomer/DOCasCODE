@@ -7,9 +7,9 @@ title: ппп
 
 * [ ] dvfsdgvdfsh
 
-* [ ] hghj
+* [x] hghj
 
-* [ ] ghjgjk
+* [x] ghjgjk
 
 * [ ] sfasd
 
@@ -18,3 +18,7 @@ title: ппп
 <p>HTML</p><DIV>djasfhasdjkfn ksdfjkasdhf jkhsdkljfhjksdh f</DIV>
 
 [/html]
+
+[cis-111-cthdbc.pdf](./cis-111-cthdbc.pdf)
+
+![](./ppp.webp){width=730px height=301px}
