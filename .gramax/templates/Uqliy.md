@@ -38,7 +38,7 @@ title: Новый Сервис <CIS-???>
 
 [comment:JnuRv]
 
-[view::::атрибу 1,тр2:Table]
+[view:атрибу 1=none:::атрибу 1,тр2:Table]
 
 [/comment]
 
@@ -49,3 +49,5 @@ title: Новый Сервис <CIS-???>
 
 
 :::
+
+[inline-property:тр2]
