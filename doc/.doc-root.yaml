@@ -11,3 +11,7 @@ properties:
     style: dark-orange
     icon: arrow-up
 style: pink-blue
+logo: 1568625796_1568625746.png
+logo_dark: 1568625796_1568625746.png
+versions:
+  - DOC-*
