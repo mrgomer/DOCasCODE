@@ -1,0 +1,419 @@
+openapi: 3.0.3
+info:
+  title: Authentication API
+  description: |
+    REST API for user authentication, registration, token management, and password recovery.
+    Provides JWT-based authentication with refresh tokens, role-based authorization,
+    and security features like rate limiting and account locking.
+  version: '1.0.0'
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: https://staging-api.example.com/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Local development
+
+tags:
+  - name: authentication
+    description: User authentication and token operations
+  - name: registration
+    description: User registration and email verification
+  - name: password
+    description: Password reset and recovery
+  - name: sessions
+    description: Session management and token validation
+
+paths:
+  /auth/register:
+    post:
+      tags: [registration]
+      summary: Register new user
+      description: Creates a new user account with email verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+            example:
+              email: "user@example.com"
+              password: "SecurePass123!"
+              firstName: "John"
+              lastName: "Doe"
+              phone: "+1234567890"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [authentication]
+      summary: Authenticate user
+      description: Authenticates user credentials and returns JWT tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "user@example.com"
+              password: "SecurePass123!"
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: HttpOnly cookies with tokens
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/refresh:
+    post:
+      tags: [authentication]
+      summary: Refresh access token
+      description: Uses refresh token to obtain new access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [sessions]
+      summary: Logout user
+      description: Invalidates current session and tokens
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/verify-email:
+    post:
+      tags: [registration]
+      summary: Verify email address
+      description: Verifies user's email using token from verification email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+      responses:
+        '200':
+          description: Email verified successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '410':
+          description: Token expired or invalid
+
+  /auth/forgot-password:
+    post:
+      tags: [password]
+      summary: Request password reset
+      description: Initiates password reset process, sends email with reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '202':
+          description: Reset email sent if account exists
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/reset-password:
+    post:
+      tags: [password]
+      summary: Reset password
+      description: Resets password using token from email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successful
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '410':
+          description: Token expired or invalid
+
+  /auth/me:
+    get:
+      tags: [authentication]
+      summary: Get current user profile
+      description: Returns authenticated user's profile information
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  schemas:
+    RegistrationRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+          example: "SecurePass123!"
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: "John"
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: "Doe"
+        phone:
+          type: string
+          pattern: "^\\+[1-9]\\d{1,14}$"
+          example: "+1234567890"
+
+    RegistrationResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        email:
+          type: string
+          example: "user@example.com"
+        status:
+          type: string
+          enum: [PENDING_VERIFICATION, ACTIVE]
+          example: "PENDING_VERIFICATION"
+        message:
+          type: string
+          example: "Verification email sent"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          example: "SecurePass123!"
+        deviceInfo:
+          type: object
+          properties:
+            userAgent:
+              type: string
+            ipAddress:
+              type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIs..."
+        refreshToken:
+          type: string
+          example: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4"
+        expiresIn:
+          type: integer
+          example: 900
+        tokenType:
+          type: string
+          example: "Bearer"
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          example: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4"
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expiresIn:
+          type: integer
+        tokenType:
+          type: string
+
+    EmailVerificationRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          example: "verification-token-123"
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        status:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Invalid input data"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "VALIDATION_ERROR"
+            message: "Email must be a valid email address"
+            details:
+              - field: "email"
+                message: "Invalid format"
+
+    Unauthorized:
+      description: Authentication required or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "AUTHENTICATION_FAILED"
+            message: "Invalid email or password"
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "RATE_LIMIT_EXCEEDED"
+            message: "Too many requests, please try again later"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from login response

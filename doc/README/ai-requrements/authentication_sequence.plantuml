@@ -1,0 +1,65 @@
+@startuml
+autonumber "<b><color:DarkSlateBlue>.</color></b> " 
+
+actor User as "User"
+participant Browser as "Browser"
+participant "API Gateway" as APIGateway
+participant "Auth Service" as AuthService
+participant "Database" as Database
+participant "Cache" as Cache
+participant "Email Service" as EmailService
+
+== Login Initiation ==
+User -> Browser : Enter email and password
+Browser -> APIGateway : HTTP POST /api/auth/login
+APIGateway -> AuthService : REST API: authenticateUser
+
+== Input Validation ==
+AuthService -> AuthService : Validate request structure
+AuthService -> Cache : GET rate_limit:user_ip
+alt Rate limit exceeded
+    AuthService --> APIGateway : HTTP 429 Too Many Requests
+    APIGateway --> Browser : Error message
+    Browser --> User : "Too many attempts, try later"
+else Within limits
+    AuthService -> Database : SQL: SELECT user by email
+    Database --> AuthService : User record
+end
+
+== Credential Verification ==
+alt User not found or inactive
+    AuthService -> Cache : INCR failed_attempts:user_ip
+    AuthService --> APIGateway : HTTP 401 Unauthorized
+    APIGateway --> Browser : "Invalid credentials"
+    Browser --> User : Display error
+else User found and active
+    AuthService -> AuthService : bcrypt.compare(password, hash)
+    alt Password mismatch
+        AuthService -> Database : UPDATE failed_login_attempts
+        AuthService -> Cache : INCR failed_attempts:user_ip
+        AuthService --> APIGateway : HTTP 401 Unauthorized
+        APIGateway --> Browser : "Invalid credentials"
+        Browser --> User : Display error
+    else Password correct
+        AuthService -> Database : RESET failed_login_attempts
+        AuthService -> Cache : DEL failed_attempts:user_ip
+    end
+end
+
+== Token Generation ==
+AuthService -> AuthService : Generate JWT access token (15min)
+AuthService -> AuthService : Generate refresh token (7 days)
+AuthService -> Database : SQL: INSERT session record
+AuthService -> Cache : SET token_blacklist:token (optional)
+
+== Response Preparation ==
+AuthService --> APIGateway : HTTP 200 with tokens in cookies
+APIGateway --> Browser : Set HttpOnly cookies
+Browser --> User : Redirect to dashboard
+
+== Optional: Email Notification ==
+AuthService -> EmailService : Async: send login notification
+EmailService --> AuthService : ACK
+AuthService -> Database : SQL: INSERT audit log
+
+@enduml

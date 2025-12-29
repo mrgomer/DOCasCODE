@@ -1,0 +1,99 @@
+@startuml
+!define ENTITY_STYLE fill:#E1F5FE,stroke:#01579B,stroke-width:2px
+!define LOOKUP_ENTITY fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px
+!define JUNCTION_ENTITY fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+
+entity "User" <<ENTITY_STYLE>> {
+  ' Primary key
+  * id : int [PK]
+  --
+  ' Authentication
+  * email : varchar(255) [UK]
+  * password_hash : varchar(255)
+  * status : varchar(50)
+  --
+  ' Personal information
+  * first_name : varchar(100)
+  * last_name : varchar(100)
+  phone : varchar(20)
+  --
+  ' Security
+  failed_login_attempts : int
+  locked_until : timestamp
+  mfa_enabled : boolean
+  --
+  ' System fields
+  * created_at : timestamp
+  * updated_at : timestamp
+  deleted_at : timestamp
+}
+
+entity "UserRole" <<JUNCTION_ENTITY>> {
+  * user_id : int [PK, FK]
+  * role_id : int [PK, FK]
+  * assigned_at : timestamp
+}
+
+entity "Role" <<LOOKUP_ENTITY>> {
+  * id : int [PK]
+  * name : varchar(50) [UK]
+  * description : text
+  * is_system : boolean
+}
+
+entity "Session" <<ENTITY_STYLE>> {
+  * id : int [PK]
+  * user_id : int [FK]
+  * device_fingerprint : varchar(255)
+  ip_address : varchar(45)
+  user_agent : text
+  * access_token_hash : varchar(255)
+  * refresh_token_hash : varchar(255)
+  * access_token_expires : timestamp
+  * refresh_token_expires : timestamp
+  * is_revoked : boolean
+  --
+  ' System fields
+  * created_at : timestamp
+  last_activity_at : timestamp
+}
+
+entity "EmailVerification" <<LOOKUP_ENTITY>> {
+  * id : int [PK]
+  * user_id : int [FK]
+  * token_hash : varchar(255) [UK]
+  * expires_at : timestamp
+  * is_used : boolean
+  * created_at : timestamp
+}
+
+entity "PasswordReset" <<LOOKUP_ENTITY>> {
+  * id : int [PK]
+  * user_id : int [FK]
+  * token_hash : varchar(255) [UK]
+  * expires_at : timestamp
+  * is_used : boolean
+  * created_at : timestamp
+}
+
+entity "AuditLog" <<LOOKUP_ENTITY>> {
+  * id : int [PK]
+  * user_id : int [FK]
+  * action : varchar(100)
+  * entity_type : varchar(50)
+  entity_id : varchar(255)
+  * ip_address : varchar(45)
+  user_agent : text
+  * details : json
+  * created_at : timestamp
+}
+
+' Relationships
+User ||--o{ Session : "has"
+User ||--o{ EmailVerification : "requests"
+User ||--o{ PasswordReset : "requests"
+User ||--o{ AuditLog : "generates"
+User ||--o{ UserRole : "assigned"
+Role ||--o{ UserRole : "assigned to"
+
+@enduml

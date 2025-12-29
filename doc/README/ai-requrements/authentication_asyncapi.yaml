@@ -1,0 +1,379 @@
+asyncapi: '2.6.0'
+info:
+  title: 'Authentication Events API'
+  version: '1.0.0'
+  description: |
+    Asynchronous events for authentication system via Apache Kafka
+    
+    ## Purpose
+    Event-driven communication between authentication service and other microservices
+    for user lifecycle events, security alerts, and audit logging.
+    
+    ## Architectural role
+    Central event bus for authentication-related events in microservices architecture.
+    
+  contact:
+    name: 'Development Team'
+    email: 'dev-team@example.com'
+  license:
+    name: 'MIT'
+
+servers:
+  kafka-cluster:
+    url: 'kafka://kafka-broker-1:9092,kafka-broker-2:9092,kafka-broker-3:9092'
+    protocol: kafka
+    description: 'Production Kafka cluster'
+    bindings:
+      kafka:
+        schemaRegistryUrl: 'http://schema-registry:8081'
+        schemaRegistryVendor: 'confluent'
+    security:
+      - saslScram: []
+
+defaultContentType: application/json
+
+channels:
+  'auth.user.events':
+    description: 'User lifecycle events (registration, updates, deletion)'
+    bindings:
+      kafka:
+        topic: 'auth.user.events'
+        partitions: 12
+        replicas: 3
+        configs:
+          retention.ms: 2592000000  # 30 days
+          cleanup.policy: 'delete'
+          compression.type: 'snappy'
+    publish:
+      summary: 'Publishing user events'
+      operationId: 'publishUserEvent'
+      bindings:
+        kafka:
+          groupId: 'auth-producers'
+          clientId: 'auth-service'
+          acks: 'all'
+          key:
+            type: string
+            description: 'User ID for partitioning'
+      message:
+        $ref: '#/components/messages/UserEvent'
+    subscribe:
+      summary: 'Subscribing to user events'
+      operationId: 'subscribeUserEvent'
+      bindings:
+        kafka:
+          groupId: 'auth-consumers'
+          clientId: 'notification-service'
+      message:
+        $ref: '#/components/messages/UserEvent'
+
+  'auth.security.alerts':
+    description: 'Security alerts (failed logins, suspicious activity)'
+    bindings:
+      kafka:
+        topic: 'auth.security.alerts'
+        partitions: 6
+        replicas: 3
+        configs:
+          retention.ms: 604800000  # 7 days
+          cleanup.policy: 'delete'
+    publish:
+      summary: 'Publishing security alerts'
+      operationId: 'publishSecurityAlert'
+      bindings:
+        kafka:
+          groupId: 'auth-producers'
+          clientId: 'auth-service'
+          acks: 1
+      message:
+        $ref: '#/components/messages/SecurityAlert'
+
+  'auth.audit.logs':
+    description: 'Audit logs for compliance and monitoring'
+    bindings:
+      kafka:
+        topic: 'auth.audit.logs'
+        partitions: 1  # Strict ordering required
+        replicas: 3
+        configs:
+          retention.ms: 31536000000  # 365 days (compliance)
+          cleanup.policy: 'compact'
+    publish:
+      summary: 'Publishing audit logs'
+      operationId: 'publishAuditLog'
+      bindings:
+        kafka:
+          groupId: 'auth-producers'
+          clientId: 'auth-service'
+          acks: 'all'
+      message:
+        $ref: '#/components/messages/AuditLog'
+
+components:
+  messages:
+    UserEvent:
+      name: 'UserEvent'
+      title: 'User Event'
+      summary: 'User state change event'
+      contentType: application/json
+      headers:
+        type: object
+        properties:
+          eventType:
+            type: string
+            enum: ['USER_REGISTERED', 'USER_VERIFIED', 'USER_UPDATED', 'USER_DELETED', 'USER_BLOCKED']
+          source:
+            type: string
+            description: 'Event source service'
+            example: 'auth-service'
+          timestamp:
+            type: string
+            format: date-time
+          correlationId:
+            type: string
+            description: 'Request correlation ID'
+      payload:
+        $ref: '#/components/schemas/UserEventPayload'
+      examples:
+        - name: 'userRegistered'
+          summary: 'User registration event'
+          headers:
+            eventType: 'USER_REGISTERED'
+            source: 'auth-service'
+            timestamp: '2024-01-15T10:30:00Z'
+            correlationId: 'corr-123'
+          payload:
+            userId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+            email: 'user@example.com'
+            firstName: 'John'
+            lastName: 'Doe'
+            status: 'PENDING_VERIFICATION'
+            registeredAt: '2024-01-15T10:30:00Z'
+
+    SecurityAlert:
+      name: 'SecurityAlert'
+      title: 'Security Alert'
+      summary: 'Security-related alert event'
+      contentType: application/json
+      headers:
+        type: object
+        properties:
+          alertType:
+            type: string
+            enum: ['FAILED_LOGIN_ATTEMPT', 'ACCOUNT_LOCKED', 'SUSPICIOUS_IP', 'BRUTE_FORCE_ATTEMPT']
+          severity:
+            type: string
+            enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+          timestamp:
+            type: string
+            format: date-time
+      payload:
+        $ref: '#/components/schemas/SecurityAlertPayload'
+
+    AuditLog:
+      name: 'AuditLog'
+      title: 'Audit Log'
+      summary: 'Audit log entry for compliance'
+      contentType: application/json
+      headers:
+        type: object
+        properties:
+          logType:
+            type: string
+            enum: ['AUTHENTICATION', 'AUTHORIZATION', 'DATA_ACCESS', 'CONFIG_CHANGE']
+          timestamp:
+            type: string
+            format: date-time
+      payload:
+        $ref: '#/components/schemas/AuditLogPayload'
+
+  schemas:
+    UserEventPayload:
+      type: object
+      required:
+        - userId
+        - email
+        - eventType
+        - timestamp
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: 'Unique user identifier'
+        email:
+          type: string
+          format: email
+          description: 'User email address'
+        firstName:
+          type: string
+          description: 'User first name'
+        lastName:
+          type: string
+          description: 'User last name'
+        status:
+          type: string
+          enum: ['PENDING_VERIFICATION', 'ACTIVE', 'INACTIVE', 'BLOCKED', 'DELETED']
+          description: 'User account status'
+        phone:
+          type: string
+          description: 'User phone number'
+        registeredAt:
+          type: string
+          format: date-time
+          description: 'Registration timestamp'
+        metadata:
+          type: object
+          description: 'Additional event data'
+          additionalProperties: true
+      example:
+        userId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+        email: 'user@example.com'
+        firstName: 'John'
+        lastName: 'Doe'
+        status: 'ACTIVE'
+        registeredAt: '2024-01-15T10:30:00Z'
+        metadata:
+          ipAddress: '192.168.1.1'
+          userAgent: 'Mozilla/5.0'
+
+    SecurityAlertPayload:
+      type: object
+      required:
+        - alertId
+        - userId
+        - alertType
+        - timestamp
+      properties:
+        alertId:
+          type: string
+          format: uuid
+          description: 'Unique alert identifier'
+        userId:
+          type: string
+          format: uuid
+          description: 'Affected user ID'
+        alertType:
+          type: string
+          enum: ['FAILED_LOGIN_ATTEMPT', 'ACCOUNT_LOCKED', 'SUSPICIOUS_IP', 'BRUTE_FORCE_ATTEMPT']
+        severity:
+          type: string
+          enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+        description:
+          type: string
+          description: 'Human-readable alert description'
+        ipAddress:
+          type: string
+          description: 'Source IP address'
+        userAgent:
+          type: string
+          description: 'User agent string'
+        failedAttempts:
+          type: integer
+          description: 'Number of failed attempts'
+        lockDuration:
+          type: integer
+          description: 'Account lock duration in minutes'
+        metadata:
+          type: object
+          additionalProperties: true
+
+    AuditLogPayload:
+      type: object
+      required:
+        - logId
+        - userId
+        - action
+        - timestamp
+      properties:
+        logId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        action:
+          type: string
+          description: 'Action performed'
+        entityType:
+          type: string
+          description: 'Type of entity affected'
+        entityId:
+          type: string
+          description: 'ID of affected entity'
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        success:
+          type: boolean
+          description: 'Whether action was successful'
+
+  securitySchemes:
+    saslScram:
+      type: scramSha512
+      description: 'SASL/SCRAM authentication'
+
+  parameters:
+    UserId:
+      description: 'User identifier'
+      schema:
+        type: string
+        format: uuid
+
+x-kafka-config:
+  cluster:
+    brokers: 3
+    replication:
+      default: 2
+      critical_topics: 3
+    resources:
+      broker_memory: '4Gi'
+      broker_cpu: '2'
+      broker_storage: '100Gi'
+  
+  producers:
+    default_config:
+      acks: 'all'
+      retries: 10
+      batch.size: 100000
+      linger.ms: 5
+      enable.idempotence: true
+      compression.type: 'snappy'
+    
+  consumers:
+    default_config:
+      auto.commit.enable: false
+      max.poll.records: 500
+      session.timeout.ms: 30000
+      fetch.min.bytes: 1
+      
+  monitoring:
+    metrics:
+      - 'kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec'
+      - 'kafka.consumer:type=consumer-fetch-manager-metrics'
+      - 'kafka.producer:type=producer-metrics'
+    alerts:
+      - name: 'high_consumer_lag'
+        condition: 'consumer_lag > 10000'
+        severity: 'critical'
+      - name: 'broker_down'
+        condition: 'broker_availability < 100%'
+        severity: 'critical'
+        
+  security:
+    authentication:
+      protocol: 'SASL_SSL'
+      mechanism: 'SCRAM-SHA-512'
+    acls:
+      - principal: 'User:auth-service'
+        operations: ['Write', 'Describe']
+        resources: ['Topic:auth.user.events', 'Topic:auth.security.alerts', 'Topic:auth.audit.logs']
+      - principal: 'User:notification-service'
+        operations: ['Read', 'Describe']
+        resources: ['Topic:auth.user.events', 'Group:auth-consumers']
+      - principal: 'User:audit-service'
+        operations: ['Read', 'Describe']
+        resources: ['Topic:auth.audit.logs', 'Group:audit-consumers']
