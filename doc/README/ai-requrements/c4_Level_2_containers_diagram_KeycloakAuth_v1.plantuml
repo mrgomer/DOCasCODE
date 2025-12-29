@@ -1,0 +1,38 @@
+@startuml
+!include <C4/C4_Container>
+
+Title Container Diagram - Authentication with Keycloak
+
+Person(user, "End User", "Uses web or mobile application")
+Person(admin, "Administrator", "Manages users and roles via admin UI")
+
+System_Boundary(auth_system, "Authentication System") {
+    Container(spa, "Single Page Application", "JavaScript", "React/Vue/Angular application")
+    Container(mobile_app, "Mobile Application", "iOS/Android", "Native mobile app")
+    Container(backend_api, "Backend API", "Java/Node.js/Go", "Business logic microservices")
+    
+    Container(keycloak, "Keycloak Server", "Java", "Identity and Access Management")
+    ContainerDb(keycloak_db, "Keycloak Database", "PostgreSQL", "Stores realms, users, clients, roles")
+    Container(keycloak_cache, "Session Cache", "Infinispan", "Distributed session storage")
+    
+    Container(ldap, "LDAP/Active Directory", "External Directory", "Corporate user directory")
+}
+
+System_Ext(google_auth, "Google OAuth", "External identity provider")
+System_Ext(email_service, "Email Service", "Sends verification/password reset emails")
+
+Rel(user, spa, "Uses", "HTTPS")
+Rel(user, mobile_app, "Uses", "HTTPS")
+Rel(spa, keycloak, "Redirects for authentication", "OpenID Connect")
+Rel(mobile_app, keycloak, "Authenticates via", "OAuth 2.0 Authorization Code PKCE")
+Rel(backend_api, keycloak, "Validates tokens", "JWT validation via introspection")
+Rel(keycloak, keycloak_db, "Reads/writes user data", "JDBC")
+Rel(keycloak, keycloak_cache, "Stores sessions", "Hot Rod protocol")
+Rel(keycloak, ldap, "Synchronizes users", "LDAP protocol")
+Rel(keycloak, google_auth, "Federates authentication", "OAuth 2.0")
+Rel(keycloak, email_service, "Sends emails", "SMTP")
+Rel(admin, keycloak, "Manages via", "Admin Console/API")
+
+SHOW_LEGEND()
+
+@enduml

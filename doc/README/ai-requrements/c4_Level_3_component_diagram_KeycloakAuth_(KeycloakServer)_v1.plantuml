@@ -1,0 +1,37 @@
+@startuml
+!include <C4/C4_Component>
+
+Title Component Diagram - Keycloak Server Internal
+
+Container(keycloak, "Keycloak Server", "Java", "Identity and Access Management")
+
+Boundary(keycloak_boundary, "Keycloak Components") {
+    Component(authentication_spi, "Authentication SPI", "Service Provider Interface", "Pluggable authentication mechanisms")
+    Component(storage_provider, "Storage Provider", "JPA", "Abstracts database operations")
+    Component(token_manager, "Token Manager", "JWT", "Generates and validates access/refresh tokens")
+    Component(user_federation, "User Federation", "LDAP/Kerberos", "Syncs with external user stores")
+    Component(identity_provider, "Identity Provider", "OIDC/SAML", "Federates with external IdPs")
+    Component(event_listener, "Event Listener", "Java SPI", "Sends events to audit logs")
+    Component(themes, "Themes", "Freemarker", "Customizable UI templates")
+    Component(admin_rest, "Admin REST API", "JAX-RS", "Management endpoints")
+    Component(authz_server, "Authorization Server", "OAuth 2.0", "OAuth2 and OIDC endpoints")
+}
+
+ContainerDb(keycloak_db, "Keycloak Database", "PostgreSQL", "Stores realms, users, clients, roles")
+Container(ldap_server, "LDAP Server", "OpenLDAP/AD", "External user directory")
+System_Ext(google, "Google OAuth", "External identity provider")
+Container(audit_service, "Audit Service", "ELK/Splunk", "Log aggregation and analysis")
+
+Rel(authentication_spi, storage_provider, "Queries user data", "JPA")
+Rel(storage_provider, keycloak_db, "Reads/writes", "JDBC")
+Rel(token_manager, authentication_spi, "Issues tokens after auth", "Java API")
+Rel(user_federation, ldap_server, "Synchronizes users", "LDAP")
+Rel(identity_provider, google, "Federates auth", "OAuth 2.0")
+Rel(event_listener, audit_service, "Sends audit events", "HTTP/Log")
+Rel(admin_rest, storage_provider, "Manages data", "JPA")
+Rel(authz_server, token_manager, "Uses token services", "Java API")
+Rel(authz_server, identity_provider, "Delegates auth", "OIDC")
+
+SHOW_LEGEND()
+
+@enduml
