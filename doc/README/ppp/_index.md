@@ -21,7 +21,11 @@ drugaya-ni-o-chem
 
 [cis-111-c](./cis-111-cthdbc.pdf)[highlight:ice-blue][thdbc.pdf](./cis-111-cthdbc.pdf)[/highlight]
 
+[comment:K5S4K]
+
 ![](./_index.webp){width=730px height=301px}
+
+[/comment]
 
 [comment:6C2eZ]
 
