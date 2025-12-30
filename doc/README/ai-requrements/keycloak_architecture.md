@@ -82,6 +82,6 @@ Keycloak использует собственную схему данных с 
 
 \<write_to_file> \<path>c4_Level_2_containers_diagram_KeycloakAuth_v1.plantuml\</path>
 
-\<content> 
+\<content>
 
-[plant-uml:./keycloak_architecture-2.puml::110px:120px]
+[plant-uml:./keycloak_architecture-2.puml::1207px:1000px]
