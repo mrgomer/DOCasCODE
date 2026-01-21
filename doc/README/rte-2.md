@@ -14,3 +14,5 @@ title: rte45t45
 [drawio:./Переходы ПРС.drawio.svg: mbnmcvbn:771px:206px]
 
 [image:./rte-3.svg::hgkmvbjnm,vn:0,0,100,100:51::771px:206px:right]
+
+sd ghsdfg dfs gsdf gdf
