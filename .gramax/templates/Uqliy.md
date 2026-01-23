@@ -50,4 +50,4 @@ title: Новый Сервис <CIS-???>
 
 :::
 
-[inline-property:тр2]
+[inline-property:тр2]hjklp;kjl;
