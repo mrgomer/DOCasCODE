@@ -1,0 +1,9 @@
+creator: mrgomer <mr.gomer@gmail.com>
+targetBranch: RM-333
+createdAt: '2026-01-23 11:36:51'
+approvers:
+- user: mrgomer <mr.gomer@gmail.com>
+options:
+  deleteAfterMerge: false
+  squash: true
+description: hik hjkgh jkf ghfj
