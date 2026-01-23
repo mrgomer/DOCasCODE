@@ -3,6 +3,7 @@ targetBranch: RM-333
 createdAt: '2026-01-23 11:36:51'
 approvers:
 - user: mrgomer <mr.gomer@gmail.com>
+  approvedAt: '2026-01-23 11:39:09'
 options:
   deleteAfterMerge: false
   squash: true
