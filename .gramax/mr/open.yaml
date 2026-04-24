@@ -1,0 +1,9 @@
+creator: mrgomer <mr.gomer@gmail.com>
+targetBranch: RM-333
+createdAt: '2026-01-21 13:40:00'
+approvers:
+- user: G0MER <mr.gomer@gmail.com>
+options:
+  deleteAfterMerge: true
+  squash: true
+description: yrtutyi
