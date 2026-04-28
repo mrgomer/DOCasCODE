@@ -1,0 +1,32 @@
+@startuml
+!include <C4/C4_Context>
+
+Title Контекстная диаграмма - Услуга "Перевод с карты на карту"
+
+Person(sender_individual, "Отправитель (физлицо)", "Клиент банка, инициирующий перевод с карты на карту")
+Person(sender_corporate, "Отправитель (юрлицо)", "Представитель организации, осуществляющий корпоративные переводы")
+Person(recipient, "Получатель", "Владелец карты, на которую зачисляются средства")
+Person(admin, "Администратор", "Управляет лимитами, тарифами и мониторингом системы")
+
+System(card2card_system, "Система переводов с карты на карту", "Обеспечивает переводы между картами клиентов банка и сторонних банков")
+
+System_Ext(payment_systems, "Платежные системы", "Visa, Mastercard, МИР - маршрутизация и процессинг off-us переводов")
+System_Ext(sbp, "СБП (Система быстрых платежей)", "Альтернативный канал для мгновенных переводов (опционально)")
+System_Ext(aml_system, "AML-система", "Внешняя система для проверки транзакций на ПОД/ФТ")
+System_Ext(currency_control, "Валютный контроль", "Государственная система проверки валютных операций")
+System_Ext(notification_gateway, "SMS/Push-шлюз", "Внешний сервис отправки уведомлений")
+
+Rel(sender_individual, card2card_system, "Переводит средства по номеру карты", "Мобильное приложение / Интернет-банк")
+Rel(sender_corporate, card2card_system, "Осуществляет корпоративные переводы", "Интернет-банк")
+Rel(recipient, card2card_system, "Получает уведомление о зачислении", "Push/SMS")
+Rel(admin, card2card_system, "Настраивает лимиты и тарифы", "Административная панель")
+
+Rel(card2card_system, payment_systems, "Отправляет off-us транзакции", "REST API")
+Rel(card2card_system, sbp, "Отправляет переводы через СБП", "API СБП")
+Rel(card2card_system, aml_system, "Проверяет транзакции на мошенничество", "REST API")
+Rel(card2card_system, currency_control, "Отправляет данные для валютного контроля", "API")
+Rel(card2card_system, notification_gateway, "Отправляет уведомления", "SMTP / HTTP")
+
+SHOW_LEGEND()
+
+@enduml
