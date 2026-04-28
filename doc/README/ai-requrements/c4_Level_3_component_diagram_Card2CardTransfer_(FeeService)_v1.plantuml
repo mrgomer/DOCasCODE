@@ -1,0 +1,66 @@
+@startuml
+!include <C4/C4_Component>
+
+Title Компонентная диаграмма - Fee Service (микросервис тарификации и комиссий)
+
+Container(fee_service, "Fee Service", "Spring Boot", "Расчет комиссий и управление тарифной политикой")
+
+Boundary(fee_boundary, "Fee Service Components") {
+
+    ' Контроллеры (REST API)
+    Component(fee_controller, "FeeController", "Spring REST Controller", "Обрабатывает HTTP-запросы на расчет комиссии и управление тарифами")
+    Component(tariff_admin_controller, "TariffAdminController", "Spring REST Controller", "Административные endpoints для управления тарифами")
+
+    ' Сервисы (бизнес-логика)
+    Component(fee_calculator, "FeeCalculator", "Spring Service", "Ядро расчета комиссии: определение тарифа по типу перевода и картам")
+    Component(tariff_manager, "TariffManager", "Spring Service", "Управление тарифными планами: создание, редактирование, деактивация")
+    Component(fee_rules_engine, "FeeRulesEngine", "Spring Service", "Движок правил тарификации: определение применимого тарифа по условиям")
+    Component(promotion_engine, "PromotionEngine", "Spring Service", "Управление акциями и скидками на комиссии")
+    Component(fee_audit_service, "FeeAuditService", "Spring Service", "Аудит и логирование всех расчетов комиссий")
+
+    ' Репозитории (доступ к данным)
+    Component(tariff_repository, "TariffRepository", "Spring Data JPA Repository", "Доступ к данным тарифных планов")
+    Component(fee_log_repository, "FeeLogRepository", "Spring Data JPA Repository", "Логирование всех расчетов комиссий")
+    Component(promotion_repository, "PromotionRepository", "Spring Data JPA Repository", "Доступ к данным акций и скидок")
+
+    ' Интеграционные клиенты
+    Component(transfer_service_client, "TransferServiceClient", "Kafka Consumer", "Получение событий о переводах для расчета комиссии")
+    Component(limit_service_client, "LimitServiceClient", "Feign Client", "Проверка лимитов для корректировки комиссии")
+}
+
+' Внешние контейнеры и системы
+ContainerDb(fee_db, "Fee Database", "PostgreSQL", "Хранилище тарифов, комиссий и акций")
+ContainerQueue(event_bus, "Event Bus", "Kafka", "Асинхронное взаимодействие")
+
+System_Ext(admin_panel, "Административная панель", "Интерфейс управления тарифами")
+
+' Связи контроллеров с сервисами
+Rel(fee_controller, fee_calculator, "вызывает расчет", "Java Interface")
+Rel(fee_controller, fee_rules_engine, "запрашивает правила", "Java Interface")
+Rel(tariff_admin_controller, tariff_manager, "управляет тарифами", "Java Interface")
+Rel(tariff_admin_controller, promotion_engine, "управляет акциями", "Java Interface")
+
+' Связи сервисов между собой
+Rel(fee_calculator, fee_rules_engine, "определяет тариф", "Java Interface")
+Rel(fee_calculator, promotion_engine, "проверяет акции", "Java Interface")
+Rel(fee_calculator, fee_audit_service, "логирует расчет", "Java Interface")
+Rel(tariff_manager, fee_rules_engine, "обновляет правила", "Java Interface")
+
+' Связи с репозиториями
+Rel(tariff_manager, tariff_repository, "читает/записывает", "Spring Data JPA")
+Rel(fee_calculator, fee_log_repository, "сохраняет лог", "Spring Data JPA")
+Rel(promotion_engine, promotion_repository, "читает/записывает", "Spring Data JPA")
+
+' Связи с внешними системами
+Rel(tariff_admin_controller, admin_panel, "предоставляет API", "HTTPS/REST")
+Rel(transfer_service_client, event_bus, "подписывается на события", "Kafka Protocol")
+Rel(fee_calculator, limit_service_client, "проверяет лимиты", "Feign Client")
+
+' Связи с БД
+Rel(tariff_repository, fee_db, "читает/записывает", "JDBC")
+Rel(fee_log_repository, fee_db, "читает/записывает", "JDBC")
+Rel(promotion_repository, fee_db, "читает/записывает", "JDBC")
+
+SHOW_LEGEND()
+
+@enduml

@@ -1,0 +1,68 @@
+@startuml
+!include <C4/C4_Component>
+
+Title Компонентная диаграмма - Transfer Service (микросервис переводов)
+
+Container(transfer_service, "Transfer Service", "Spring Boot", "Ядро бизнес-логики обработки переводов с карты на карту")
+
+Boundary(transfer_boundary, "Transfer Service Components") {
+
+    ' Контроллеры (REST API)
+    Component(transfer_controller, "TransferController", "Spring REST Controller", "Обрабатывает HTTP-запросы на создание и управление переводами")
+    Component(limit_client_controller, "LimitClientController", "Spring REST Controller", "Клиент для проверки лимитов через Limit Service")
+    Component(fee_client_controller, "FeeClientController", "Spring REST Controller", "Клиент для расчета комиссии через Fee Service")
+
+    ' Сервисы (бизнес-логика)
+    Component(transfer_orchestrator, "TransferOrchestrator", "Spring Service", "Оркестратор процесса перевода: координация всех шагов")
+    Component(validation_service, "ValidationService", "Spring Service", "Валидация номера карты (алгоритм Луна), проверка формата данных")
+    Component(routing_service, "RoutingService", "Spring Service", "Маршрутизация перевода: on-us / off-us / СБП")
+    Component(currency_converter, "CurrencyConverter", "Spring Service", "Конвертация валют по текущему курсу")
+    Component(compliance_client, "ComplianceClient", "Spring Service", "Клиент для проверок через Compliance Service")
+    Component(notification_client, "NotificationClient", "Spring Service", "Клиент для отправки уведомлений через Notification Service")
+
+    ' Репозитории (доступ к данным)
+    Component(transfer_repository, "TransferRepository", "Spring Data JPA Repository", "Доступ к данным переводов в БД")
+    Component(transfer_event_publisher, "TransferEventPublisher", "Spring Kafka Producer", "Публикация событий о переводах в Kafka")
+
+    ' Интеграционные клиенты
+    Component(payment_gateway_client, "PaymentGatewayClient", "Feign Client / WebClient", "Интеграция с платежным шлюзом (Visa/MC/МИР)")
+    Component(sbp_client, "SBPClient", "Feign Client / WebClient", "Интеграция с СБП для мгновенных переводов")
+    Component(core_banking_client, "CoreBankingClient", "Feign Client / WebClient", "Интеграция с АБС для проводок по счетам")
+}
+
+' Внешние контейнеры и системы
+ContainerDb(transfer_db, "Transfer Database", "PostgreSQL", "Хранилище данных переводов")
+ContainerQueue(event_bus, "Event Bus", "Kafka", "Асинхронное взаимодействие")
+
+System_Ext(payment_gateway, "Платежный шлюз", "Visa / Mastercard / МИР")
+System_Ext(sbp, "СБП", "Система быстрых платежей")
+System_Ext(core_banking, "Core Banking System", "АБС банка")
+
+' Связи контроллеров с сервисами
+Rel(transfer_controller, transfer_orchestrator, "вызывает", "Java Interface")
+Rel(transfer_controller, validation_service, "вызывает", "Java Interface")
+Rel(transfer_controller, routing_service, "вызывает", "Java Interface")
+Rel(limit_client_controller, transfer_orchestrator, "передает запрос", "Java Interface")
+Rel(fee_client_controller, transfer_orchestrator, "передает запрос", "Java Interface")
+
+' Связи оркестратора с сервисами
+Rel(transfer_orchestrator, validation_service, "вызывает валидацию", "Java Interface")
+Rel(transfer_orchestrator, routing_service, "определяет маршрут", "Java Interface")
+Rel(transfer_orchestrator, currency_converter, "выполняет конвертацию", "Java Interface")
+Rel(transfer_orchestrator, compliance_client, "проверяет комплаенс", "Java Interface")
+Rel(transfer_orchestrator, notification_client, "отправляет уведомления", "Java Interface")
+Rel(transfer_orchestrator, transfer_repository, "сохраняет транзакцию", "Spring Data JPA")
+Rel(transfer_orchestrator, transfer_event_publisher, "публикует событие", "Spring Kafka")
+
+' Связи с внешними системами
+Rel(payment_gateway_client, payment_gateway, "отправляет транзакцию", "REST API")
+Rel(sbp_client, sbp, "отправляет перевод", "API СБП")
+Rel(core_banking_client, core_banking, "выполняет проводки", "API")
+
+' Связи с БД и очередью
+Rel(transfer_repository, transfer_db, "читает/записывает", "JDBC")
+Rel(transfer_event_publisher, event_bus, "публикует события", "Kafka Protocol")
+
+SHOW_LEGEND()
+
+@enduml

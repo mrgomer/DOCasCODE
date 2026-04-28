@@ -1,0 +1,86 @@
+@startuml
+!include <C4/C4_Container>
+
+Title Диаграмма контейнеров - Система переводов с карты на карту
+
+Person(sender_individual, "Отправитель (физлицо)", "Клиент банка, инициирующий перевод")
+Person(sender_corporate, "Отправитель (юрлицо)", "Представитель организации")
+Person(recipient, "Получатель", "Владелец карты получателя")
+Person(admin, "Администратор", "Управляет лимитами и тарифами")
+
+System_Boundary(card2card_system, "Система переводов с карты на карту") {
+
+    Container(mobile_app, "Мобильное приложение", "React Native / Swift / Kotlin", "Предоставляет интерфейс для переводов, истории и шаблонов")
+    Container(web_app, "Интернет-банк", "React / Angular", "Веб-интерфейс для переводов, истории и шаблонов")
+    Container(admin_panel, "Административная панель", "React", "Управление лимитами, тарифами, мониторинг операций")
+
+    Container(api_gateway, "API Gateway", "Spring Cloud Gateway / Kong", "Маршрутизация запросов, аутентификация, rate limiting")
+
+    Container(transfer_service, "Transfer Service", "Spring Boot", "Ядро бизнес-логики: обработка переводов, валидация, маршрутизация")
+    Container(limit_service, "Limit Service", "Spring Boot", "Управление и проверка лимитов переводов")
+    Container(fee_service, "Fee Service", "Spring Boot", "Расчет комиссий и тарифов")
+    Container(notification_service, "Notification Service", "Spring Boot", "Формирование и отправка уведомлений")
+    Container(history_service, "History Service", "Spring Boot", "Хранение и предоставление истории операций")
+    Container(template_service, "Template Service", "Spring Boot", "Управление шаблонами переводов")
+    Container(compliance_service, "Compliance Service", "Spring Boot", "Проверки 115-ФЗ, AML, валютный контроль")
+
+    ContainerDb(transfer_db, "Transfer Database", "PostgreSQL", "Хранилище данных переводов и транзакций")
+    ContainerDb(limit_db, "Limit Database", "PostgreSQL", "Хранилище лимитов и их использования")
+    ContainerDb(history_db, "History Database", "PostgreSQL", "Хранилище истории операций")
+    ContainerDb(template_db, "Template Database", "PostgreSQL", "Хранилище шаблонов переводов")
+
+    ContainerQueue(event_bus, "Event Bus", "Kafka", "Асинхронное взаимодействие между сервисами")
+}
+
+System_Ext(payment_gateway, "Платежный шлюз", "Visa / Mastercard / МИР")
+System_Ext(sbp, "СБП", "Система быстрых платежей")
+System_Ext(aml_system, "AML-система", "Проверка транзакций")
+System_Ext(currency_control, "Валютный контроль", "Государственная система")
+System_Ext(sms_gateway, "SMS/Push-шлюз", "Внешний сервис уведомлений")
+System_Ext(core_banking, "Core Banking System", "АБС банка")
+
+' Связи пользователей
+Rel(sender_individual, mobile_app, "Использует", "HTTPS")
+Rel(sender_individual, web_app, "Использует", "HTTPS")
+Rel(sender_corporate, web_app, "Использует", "HTTPS")
+Rel(admin, admin_panel, "Управляет", "HTTPS")
+
+' Связи фронтенд -> API Gateway
+Rel(mobile_app, api_gateway, "Вызывает API", "HTTPS/REST")
+Rel(web_app, api_gateway, "Вызывает API", "HTTPS/REST")
+Rel(admin_panel, api_gateway, "Вызывает API", "HTTPS/REST")
+
+' Связи API Gateway -> Сервисы
+Rel(api_gateway, transfer_service, "Маршрутизирует запросы", "HTTPS/REST")
+Rel(api_gateway, limit_service, "Маршрутизирует запросы", "HTTPS/REST")
+Rel(api_gateway, fee_service, "Маршрутизирует запросы", "HTTPS/REST")
+Rel(api_gateway, notification_service, "Маршрутизирует запросы", "HTTPS/REST")
+Rel(api_gateway, history_service, "Маршрутизирует запросы", "HTTPS/REST")
+Rel(api_gateway, template_service, "Маршрутизирует запросы", "HTTPS/REST")
+Rel(api_gateway, compliance_service, "Маршрутизирует запросы", "HTTPS/REST")
+
+' Связи сервисов с БД
+Rel(transfer_service, transfer_db, "Читает/записывает", "JDBC")
+Rel(limit_service, limit_db, "Читает/записывает", "JDBC")
+Rel(history_service, history_db, "Читает/записывает", "JDBC")
+Rel(template_service, template_db, "Читает/записывает", "JDBC")
+
+' Связи через Kafka
+Rel(transfer_service, event_bus, "Публикует события переводов", "Kafka Protocol")
+Rel(limit_service, event_bus, "Подписывается на события", "Kafka Protocol")
+Rel(fee_service, event_bus, "Подписывается на события", "Kafka Protocol")
+Rel(notification_service, event_bus, "Подписывается на события", "Kafka Protocol")
+Rel(history_service, event_bus, "Подписывается на события", "Kafka Protocol")
+Rel(compliance_service, event_bus, "Подписывается на события", "Kafka Protocol")
+
+' Связи с внешними системами
+Rel(transfer_service, payment_gateway, "Отправляет транзакции", "REST API")
+Rel(transfer_service, sbp, "Отправляет переводы", "API СБП")
+Rel(transfer_service, core_banking, "Выполняет проводки", "API")
+Rel(compliance_service, aml_system, "Проверяет транзакции", "REST API")
+Rel(compliance_service, currency_control, "Отправляет данные", "API")
+Rel(notification_service, sms_gateway, "Отправляет уведомления", "SMTP/HTTP")
+
+SHOW_LEGEND()
+
+@enduml
